@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-multipart
+opencv-python-headless
+numpy
+scikit-learn
+requests
+tensorflow
+Pillow
