@@ -19,7 +19,7 @@ const colorDistance = (c1, c2) => {
 };
 
 const getRecommendations = async (aiResult) => {
-    const { style, dominant_colors } = aiResult;
+    const { style, dominant_colors, detected_items = [] } = aiResult;
 
     // In a real database, we would query Products collection
     // For now we will return some mock recommended products that match
@@ -28,6 +28,7 @@ const getRecommendations = async (aiResult) => {
             product_id: "p1",
             name: "Modern Leather Sofa",
             style_category: "Modern",
+            item_category: "couch",
             dominant_color: "#1F2933",
             image_url: "https://example.com/sofa.png",
             ar_model_url: "sofa.glb",
@@ -38,6 +39,7 @@ const getRecommendations = async (aiResult) => {
             product_id: "p2",
             name: "Bohemian Woven Rug",
             style_category: "Bohemian",
+            item_category: "rug",
             dominant_color: "#D4A373",
             image_url: "https://example.com/rug.png",
             ar_model_url: "rug.glb",
@@ -48,17 +50,42 @@ const getRecommendations = async (aiResult) => {
             product_id: "p3",
             name: "Minimalist Wood Frame Bed",
             style_category: "Minimalist",
+            item_category: "bed",
             dominant_color: "#F7F3EF",
             image_url: "https://example.com/bed.png",
             ar_model_url: "bed.glb",
             price: 450.00,
             popularity_score: 92
         },
-        // We ensure there's a dynamic result based on input
+        {
+            product_id: "p4",
+            name: "Industrial Metal Accent Chair",
+            style_category: "Industrial",
+            item_category: "chair",
+            dominant_color: "#3B3A36",
+            image_url: "https://example.com/chair.png",
+            ar_model_url: "chair.glb",
+            price: 215.00,
+            popularity_score: 85
+        },
+        {
+            product_id: "p5",
+            name: "Scandinavian Potted Plant",
+            style_category: "Scandinavian",
+            item_category: "potted plant",
+            dominant_color: "#4A7A59",
+            image_url: "https://example.com/plant.png",
+            ar_model_url: "plant.glb",
+            price: 45.00,
+            popularity_score: 90
+        }
     ];
 
+    // Exclude items that are already in the room
+    let validProducts = mockProducts.filter(p => !detected_items.includes(p.item_category));
+
     // Filter by matching style first
-    let matchingProducts = mockProducts.filter(p => p.style_category === style);
+    let matchingProducts = validProducts.filter(p => p.style_category === style);
 
     // If we have none matching perfectly, just return all sorted by popularity
     if (matchingProducts.length === 0) {

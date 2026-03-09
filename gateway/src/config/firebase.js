@@ -1,22 +1,17 @@
 const admin = require('firebase-admin');
 
-// In a real production scenario, use a proper ServiceAccountKey.json
-// For this demo structure, we initialize with default credentials or dummy
-try {
-    // If you have a real service account key, uncomment and use it:
-    // const serviceAccount = require('./ServiceAccountKey.json');
-    // admin.initializeApp({
-    //     credential: admin.credential.cert(serviceAccount)
-    // });
+// Load your Firebase Service Account Key directly
+const serviceAccount = require('D:/Project_Ground/DecorMatch-AI-Intelligent-Interior-Styling-Assistant/gateway/decormatch-ai-firebase-adminsdk-fbsvc-3e9043c5cd.json');
 
-    // For now we will use a mock initialization or default app to prevent crash
-    admin.initializeApp();
-    console.log("Firebase Admin Initialized");
-} catch (error) {
-    console.warn("Firebase Init Warning (Expected if no credentials):", error.message);
-}
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: serviceAccount.project_id + '.appspot.com'
+});
+
+console.log("✅ Firebase Admin Initialized with Service Account");
 
 const db = admin.firestore();
 const storage = admin.storage();
+const auth = admin.auth();
 
-module.exports = { admin, db, storage };
+module.exports = { admin, db, storage, auth };

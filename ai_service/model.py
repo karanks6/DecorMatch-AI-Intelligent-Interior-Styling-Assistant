@@ -3,13 +3,27 @@ import numpy as np
 from sklearn.cluster import KMeans
 import tensorflow as tf
 from tensorflow.keras.applications import MobileNetV2
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input, decode_predictions
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input as mobilenet_preprocess, decode_predictions
+from tensorflow.keras.applications.resnet50 import preprocess_input as resnet_preprocess
+from tensorflow.keras.models import load_model
 from PIL import Image
 import io
+import os
+from ultralytics import YOLO
 
-# Load pre-trained MobileNetV2 for feature extraction
-# We will use ImageNet weights for dummy style classification mapping
-base_model = MobileNetV2(weights='imagenet', include_top=True)
+# Load YOLOv8 for object detection (Decor Items)
+yolo_model = YOLO('yolov8n.pt')
+
+# Load the custom trained model if it exists, otherwise fallback to the ImageNet mock
+MODEL_PATH = os.path.join(os.path.dirname(__file__), 'interior_style_model.h5')
+if os.path.exists(MODEL_PATH):
+    print(f"Loading custom trained model from {MODEL_PATH}...")
+    style_model = load_model(MODEL_PATH)
+    is_custom_model = True
+else:
+    print("Custom model not found. Falling back to MobileNetV2 ImageNet mock. Please run train.py to build the real model.")
+    style_model = MobileNetV2(weights='imagenet', include_top=True)
+    is_custom_model = False
 
 # Predefined styles based on requirements
 STYLES = [
@@ -70,30 +84,70 @@ def extract_dominant_colors(image_bytes, k=3):
         
     return hex_colors
 
+def extract_detected_items(image_bytes):
+    """
+    Uses YOLOv8 to detect real objects (like chairs, beds, plants) in the room.
+    """
+    img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+    results = yolo_model(img, verbose=False) # Run inference
+    
+    detected_items = []
+    
+    # YOLO returns a list of Results objects
+    for r in results:
+        boxes = r.boxes
+        for box in boxes:
+            # Get class ID
+            cls_id = int(box.cls[0].item())
+            # Get class name
+            class_name = r.names[cls_id]
+            # Get confidence
+            conf = float(box.conf[0].item())
+            
+            # Filter somewhat relevant interior generic COCO classes
+            interior_relevant = ['chair', 'couch', 'potted plant', 'bed', 'dining table', 'tv', 'vase', 'clock', 'book', 'refrigerator', 'oven', 'sink', 'microwave']
+            
+            if class_name in interior_relevant and conf > 0.3:
+                if class_name not in detected_items:
+                    detected_items.append(class_name)
+                    
+    return detected_items
+
 def analyze_room_image(image_bytes):
     """
-    1. Runs style classification using MobileNetV2 
-    2. Runs dominant color extraction using OpenCV/KMeans
+    1. Runs style classification using Custom ResNet50 (or Mock MobileNet)
+    2. Runs object detection using YOLOv8
+    3. Runs dominant color extraction using OpenCV/KMeans
     """
-    # 1. Image Classification preprocessing
     img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-    img = img.resize((224, 224))
-    img_array = tf.keras.preprocessing.image.img_to_array(img)
+    img_resized = img.resize((224, 224))
+    img_array = tf.keras.preprocessing.image.img_to_array(img_resized)
     img_array = np.expand_dims(img_array, axis=0)
-    img_array = preprocess_input(img_array)
     
-    # Predict
-    preds = base_model.predict(img_array)
-    decoded_preds = decode_predictions(preds, top=3)
+    if is_custom_model:
+        # Real pipeline
+        img_array = resnet_preprocess(img_array)
+        preds = style_model.predict(img_array)
+        style_index = np.argmax(preds[0])
+        confidence = float(np.max(preds[0]))
+        style = STYLES[style_index]
+    else:
+        # Mock pipeline
+        img_array = mobilenet_preprocess(img_array)
+        preds = style_model.predict(img_array)
+        decoded_preds = decode_predictions(preds, top=3)
+        style, confidence = map_imagenet_to_style(decoded_preds)
     
-    # Map to style
-    style, confidence = map_imagenet_to_style(decoded_preds)
+    # 2. Object Detection
+    detected_items = extract_detected_items(image_bytes)
     
-    # 2. Color Extraction
+    # 3. Color Extraction
     dominant_colors = extract_dominant_colors(image_bytes, k=3)
     
     return {
         "style": style,
-        "confidence": confidence,
-        "dominant_colors": dominant_colors
+        "confidence": round(confidence, 2),
+        "dominant_colors": dominant_colors,
+        "detected_items": detected_items,
+        "is_real_ai": is_custom_model
     }

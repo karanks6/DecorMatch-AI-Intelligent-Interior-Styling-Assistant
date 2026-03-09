@@ -1,1 +1,8 @@
 ai_service/myenv/ 
+firebase_options.dart
+**/ServiceAccountKey.json
+**/google-services.json
+**/GoogleService-Info.plist
+node_modules/
+*.json
+gateway/*.json

@@ -18,6 +18,10 @@ dependencies:
   google_fonts: ^6.2.1
   file_picker: ^8.0.0
   ar_flutter_plugin_flutterflow: ^0.7.35
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.3
+  firebase_storage: ^12.3.2
 
 dev_dependencies:
   flutter_test:

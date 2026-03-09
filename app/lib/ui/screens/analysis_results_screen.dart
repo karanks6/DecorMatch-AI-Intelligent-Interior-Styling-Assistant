@@ -4,10 +4,21 @@ import '../widgets/product_card.dart';
 import 'product_detail_screen.dart';
 
 class AnalysisResultsScreen extends StatelessWidget {
-  const AnalysisResultsScreen({super.key});
+  final Map<String, dynamic> resultData;
+
+  const AnalysisResultsScreen({super.key, required this.resultData});
 
   @override
   Widget build(BuildContext context) {
+    final analysis = resultData['analysis'] ?? {};
+    final recommendations =
+        resultData['recommendations'] as List<dynamic>? ?? [];
+
+    final style = analysis['style'] ?? 'Unknown Style';
+    final confidence = ((analysis['confidence'] ?? 0.0) * 100).toInt();
+    final dominantColors = List<String>.from(analysis['dominant_colors'] ?? []);
+    final detectedItems = List<String>.from(analysis['detected_items'] ?? []);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Analysis Results'),
@@ -42,7 +53,7 @@ class AnalysisResultsScreen extends StatelessWidget {
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                           Text(
-                            'Bohemian',
+                            style,
                             style: Theme.of(context)
                                 .textTheme
                                 .displayMedium
@@ -60,7 +71,7 @@ class AnalysisResultsScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          '88% Match',
+                          '$confidence% Match',
                           style: TextStyle(
                             color: AppColors.accent,
                             fontWeight: FontWeight.bold,
@@ -74,48 +85,64 @@ class AnalysisResultsScreen extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 16),
                   Row(
-                    children: [
-                      _buildColorSwatch(const Color(0xFFC65D4F)),
-                      const SizedBox(width: 16),
-                      _buildColorSwatch(const Color(0xFFD9A066)),
-                      const SizedBox(width: 16),
-                      _buildColorSwatch(const Color(0xFF3F4E4F)),
-                    ],
+                    children: dominantColors
+                        .map((hex) => Padding(
+                              padding: const EdgeInsets.only(right: 16),
+                              child: _buildColorSwatch(_hexToColor(hex)),
+                            ))
+                        .toList(),
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 32),
+                  if (detectedItems.isNotEmpty) ...[
+                    Text('Detected Items (YOLOv8)',
+                        style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: detectedItems
+                          .map((item) => Chip(
+                                label: Text(item.toUpperCase()),
+                                backgroundColor: AppColors.secondary,
+                              ))
+                          .toList(),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
                   Text('Recommended Decor',
                       style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 16),
                   SizedBox(
                     height: 280,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const ProductDetailScreen()),
-                            );
-                          },
-                          child: ProductCard(
-                            name: "Woven Wall Hanging",
-                            styleCategory: "Bohemian",
-                            imageUrl: "https://via.placeholder.com/200",
-                            price: "\$45",
+                    child: recommendations.isEmpty
+                        ? const Text("No recommendations found.")
+                        : ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: recommendations.length,
+                            itemBuilder: (context, index) {
+                              final p = recommendations[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 16),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ProductDetailScreen()),
+                                    );
+                                  },
+                                  child: ProductCard(
+                                    name: p['name'] ?? 'Style Item',
+                                    styleCategory: p['style_category'] ?? style,
+                                    imageUrl: p['image_url'] ??
+                                        "https://via.placeholder.com/200",
+                                    price: "\$${p['price'] ?? 0.0}",
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        ProductCard(
-                          name: "Rattan Chair",
-                          styleCategory: "Bohemian",
-                          imageUrl: "https://via.placeholder.com/200",
-                          price: "\$180",
-                        ),
-                      ],
-                    ),
                   )
                 ],
               ),
@@ -142,5 +169,12 @@ class AnalysisResultsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Color _hexToColor(String hexString) {
+    final buffer = StringBuffer();
+    if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
+    buffer.write(hexString.replaceFirst('#', ''));
+    return Color(int.parse(buffer.toString(), radix: 16));
   }
 }

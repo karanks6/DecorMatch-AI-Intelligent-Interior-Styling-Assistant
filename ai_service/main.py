@@ -13,6 +13,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def read_root():
+    return {"message": "DecorMatch AI Service is running. Use /analyze-room via POST."}
+
 @app.get("/health")
 def health_check():
     return {"status": "AI Service is healthy"}
