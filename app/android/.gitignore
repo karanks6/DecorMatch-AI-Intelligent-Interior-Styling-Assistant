@@ -6,7 +6,12 @@ gradle-wrapper.jar
 /local.properties
 GeneratedPluginRegistrant.java
 .cxx/
-
+interior_style_model.keras
+interior_style_model_backup.keras
+*.keras
+*.pt
+__pycache__/
+*.pyc
 # Remember to never publicly share your keystore.
 # See https://flutter.dev/to/reference-keystore
 key.properties

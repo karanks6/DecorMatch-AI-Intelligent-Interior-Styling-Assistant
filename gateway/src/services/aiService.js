@@ -6,7 +6,7 @@ const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const analyzeImageWithAI = async (fileBuffer, originalName) => {
     try {
         const form = new FormData();
-        form.append('file', fileBuffer, originalName);
+        form.append('file', fileBuffer, { filename: originalName || 'image.jpg', contentType: 'image/jpeg' });
 
         const response = await axios.post(`${AI_SERVICE_URL}/analyze-room`, form, {
             headers: {
@@ -16,8 +16,12 @@ const analyzeImageWithAI = async (fileBuffer, originalName) => {
 
         return response.data; // { style, confidence, dominant_colors }
     } catch (error) {
-        console.error("Error communicating with AI service:", error.message);
-        throw new Error("Failed to analyze image with AI service.");
+        let detail = error.message;
+        if (error.response && error.response.data && error.response.data.detail) {
+            detail = JSON.stringify(error.response.data.detail);
+        }
+        console.error("Error communicating with AI service:", detail);
+        throw new Error("AI Python Microservice Error: " + detail);
     }
 };
 

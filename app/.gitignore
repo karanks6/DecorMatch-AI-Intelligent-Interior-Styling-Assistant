@@ -16,6 +16,11 @@ firebase_options.dart
 *.json
 gateway/*.json
 
+*.keras
+*.pt
+__pycache__/
+*.pyc
+
 # IntelliJ related
 *.iml
 *.ipr
@@ -47,3 +52,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+interior_style_model.keras
+interior_style_model_backup.keras

@@ -2,6 +2,8 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from model import analyze_room_image
+import traceback
+import os
 
 app = FastAPI(title="DecorMatch AI Service")
 
@@ -28,6 +30,12 @@ async def analyze_room(file: UploadFile = File(...)):
         analysis_result = analyze_room_image(contents)
         return analysis_result
     except Exception as e:
+        error_string = traceback.format_exc()
+        try:
+            with open(os.path.join(os.path.dirname(__file__), 'crash.log'), 'w') as f:
+                f.write(error_string)
+        except Exception:
+            pass
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

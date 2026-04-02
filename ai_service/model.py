@@ -11,17 +11,24 @@ import io
 import os
 from ultralytics import YOLO
 
+
 # Load YOLOv8 for object detection (Decor Items)
 yolo_model = YOLO('yolov8n.pt')
 
 # Load the custom trained model if it exists, otherwise fallback to the ImageNet mock
-MODEL_PATH = os.path.join(os.path.dirname(__file__), 'interior_style_model.h5')
-if os.path.exists(MODEL_PATH):
-    print(f"Loading custom trained model from {MODEL_PATH}...")
-    style_model = load_model(MODEL_PATH)
+MODEL_PATH_KERAS = os.path.join(os.path.dirname(__file__), 'interior_style_model.keras')
+MODEL_PATH_H5 = os.path.join(os.path.dirname(__file__), 'interior_style_model.h5')
+
+if os.path.exists(MODEL_PATH_KERAS):
+    print(f"Loading custom trained model from {MODEL_PATH_KERAS}...")
+    style_model = load_model(MODEL_PATH_KERAS)
+    is_custom_model = True
+elif os.path.exists(MODEL_PATH_H5):
+    print(f"Loading custom trained model from {MODEL_PATH_H5}...")
+    style_model = load_model(MODEL_PATH_H5)
     is_custom_model = True
 else:
-    print("Custom model not found. Falling back to MobileNetV2 ImageNet mock. Please run train.py to build the real model.")
+    print("Custom model not found. Falling back to MobileNetV2 ImageNet mock. Please run train.py or place your .keras/.h5 model here.")
     style_model = MobileNetV2(weights='imagenet', include_top=True)
     is_custom_model = False
 

@@ -39,7 +39,7 @@ router.post('/analyze-room', upload.single('image'), async (req, res) => {
 
     } catch (error) {
         console.error("Analyze Room Error:", error.message);
-        res.status(500).json({ error: 'Failed to complete analysis process' });
+        res.status(500).json({ error: 'Analysis process failed: ' + error.message });
     }
 });
 
