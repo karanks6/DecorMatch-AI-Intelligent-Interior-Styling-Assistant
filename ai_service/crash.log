@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "D:\Project_Ground\DecorMatch-AI-Intelligent-Interior-Styling-Assistant\ai_service\main.py", line 30, in analyze_room
+    analysis_result = analyze_room_image(contents)
+  File "D:\Project_Ground\DecorMatch-AI-Intelligent-Interior-Styling-Assistant\ai_service\model.py", line 137, in analyze_room_image
+    preds = style_model.predict(img_array)
+  File "D:\Project_Ground\DecorMatch-AI-Intelligent-Interior-Styling-Assistant\ai_service\myenv\lib\site-packages\keras\src\utils\traceback_utils.py", line 122, in error_handler
+    raise e.with_traceback(filtered_tb) from None
+  File "D:\Project_Ground\DecorMatch-AI-Intelligent-Interior-Styling-Assistant\ai_service\myenv\lib\site-packages\keras\src\layers\input_spec.py", line 245, in assert_input_compatibility
+    raise ValueError(
+ValueError: Input 0 of layer "functional" is incompatible with the layer: expected shape=(None, 300, 300, 3), found shape=(1, 224, 224, 3)

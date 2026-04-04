@@ -4,11 +4,12 @@ from sklearn.cluster import KMeans
 import tensorflow as tf
 from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input as mobilenet_preprocess, decode_predictions
-from tensorflow.keras.applications.resnet50 import preprocess_input as resnet_preprocess
+from tensorflow.keras.applications.efficientnet_v2 import preprocess_input as efficientnet_preprocess
 from tensorflow.keras.models import load_model
 from PIL import Image
 import io
 import os
+import json
 from ultralytics import YOLO
 
 
@@ -16,7 +17,7 @@ from ultralytics import YOLO
 yolo_model = YOLO('yolov8n.pt')
 
 # Load the custom trained model if it exists, otherwise fallback to the ImageNet mock
-MODEL_PATH_KERAS = os.path.join(os.path.dirname(__file__), 'interior_style_model.keras')
+MODEL_PATH_KERAS = os.path.join(os.path.dirname(__file__), 'interior_style_v2.keras')
 MODEL_PATH_H5 = os.path.join(os.path.dirname(__file__), 'interior_style_model.h5')
 
 if os.path.exists(MODEL_PATH_KERAS):
@@ -32,7 +33,7 @@ else:
     style_model = MobileNetV2(weights='imagenet', include_top=True)
     is_custom_model = False
 
-# Predefined styles based on requirements
+# Predefined styles (Fallback)
 STYLES = [
     "Minimalist",
     "Bohemian",
@@ -41,6 +42,28 @@ STYLES = [
     "Scandinavian",
     "Industrial"
 ]
+
+# Dynamically load the exact class order from your Keras training run!
+INDEX_PATH = os.path.join(os.path.dirname(__file__), 'class_indices_v2.json')
+if os.path.exists(INDEX_PATH):
+    print(f"Loading true class mapping from {INDEX_PATH}")
+    with open(INDEX_PATH, 'r', encoding='utf-8') as f:
+        class_map = json.load(f)
+
+    # Some users save {"Bohemian": 0}, others save {"0": "Bohemian"}
+    # Let's detect the format and invert if necessary
+    first_val = list(class_map.values())[0] if class_map else None
+    
+    if isinstance(first_val, int) or (isinstance(first_val, str) and first_val.isdigit()):
+        # Format is {"Bohemian": 0}
+        inverted_map = {int(v): str(k) for k, v in class_map.items()}
+    else:
+        # Format is {"0": "Bohemian"}
+        inverted_map = {int(k): str(v) for k, v in class_map.items()}
+        
+    max_idx = max(inverted_map.keys()) if inverted_map else -1
+    STYLES = [inverted_map.get(i, "Unknown Style") for i in range(max_idx + 1)]
+    print(f"Realigned STYLES mapping: {STYLES}")
 
 def map_imagenet_to_style(predictions):
     """
@@ -127,19 +150,26 @@ def analyze_room_image(image_bytes):
     3. Runs dominant color extraction using OpenCV/KMeans
     """
     img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-    img_resized = img.resize((224, 224))
-    img_array = tf.keras.preprocessing.image.img_to_array(img_resized)
-    img_array = np.expand_dims(img_array, axis=0)
     
     if is_custom_model:
-        # Real pipeline
-        img_array = resnet_preprocess(img_array)
+        # Dynamically get required input size from the loaded model
+        target_size = style_model.input_shape[1:3] # e.g. (300, 300)
+        img_resized = img.resize(target_size)
+        img_array = tf.keras.preprocessing.image.img_to_array(img_resized)
+        img_array = np.expand_dims(img_array, axis=0)
+        
+        # Real pipeline (EfficientNetV2Preprocessing)
+        img_array = efficientnet_preprocess(img_array)
         preds = style_model.predict(img_array)
         style_index = np.argmax(preds[0])
         confidence = float(np.max(preds[0]))
         style = STYLES[style_index]
     else:
         # Mock pipeline
+        img_resized = img.resize((224, 224))
+        img_array = tf.keras.preprocessing.image.img_to_array(img_resized)
+        img_array = np.expand_dims(img_array, axis=0)
+        
         img_array = mobilenet_preprocess(img_array)
         preds = style_model.predict(img_array)
         decoded_preds = decode_predictions(preds, top=3)

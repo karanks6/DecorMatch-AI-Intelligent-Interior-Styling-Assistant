@@ -4,8 +4,8 @@ import os
 import tempfile
 import shutil
 
-keras_path = os.path.join(os.path.dirname(__file__), 'interior_style_model.keras')
-backup_path = os.path.join(os.path.dirname(__file__), 'interior_style_model_backup.keras')
+keras_path = os.path.join(os.path.dirname(__file__), 'interior_style_v2.keras')
+backup_path = os.path.join(os.path.dirname(__file__), 'interior_style_v2_backup.keras')
 
 if not os.path.exists(keras_path):
     print("Model not found!")

@@ -83,7 +83,9 @@ class ProductDetailScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const ArPreviewScreen()),
+                              builder: (context) => const ArPreviewScreen(
+                                modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb",
+                              )),
                         );
                       },
                       icon: const Icon(Icons.view_in_ar),
