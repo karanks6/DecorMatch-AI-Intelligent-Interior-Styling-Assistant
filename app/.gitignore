@@ -15,6 +15,10 @@ myenv/
 firebase_options.dart
 *.json
 gateway/*.json
+.glb
+.png
+.jpeg
+.jpg
 
 *.keras
 *.pt

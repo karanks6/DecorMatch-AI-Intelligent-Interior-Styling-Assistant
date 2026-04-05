@@ -17,3 +17,8 @@ __pycache__/
 key.properties
 **/*.keystore
 **/*.jks
+
+.glb
+.png
+.jpeg
+.jpg

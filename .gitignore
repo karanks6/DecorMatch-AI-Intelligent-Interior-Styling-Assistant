@@ -6,6 +6,10 @@ firebase_options.dart
 node_modules/
 *.json
 gateway/*.json
+.glb
+.png
+.jpeg
+.jpg
 
 *.keras
 *.pt
