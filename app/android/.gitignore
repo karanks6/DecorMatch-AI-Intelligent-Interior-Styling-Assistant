@@ -18,7 +18,7 @@ key.properties
 **/*.keystore
 **/*.jks
 
-.glb
-.png
-.jpeg
-.jpg
+*.glb
+*.png
+*.jpeg
+*.jpg

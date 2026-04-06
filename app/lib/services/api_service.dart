@@ -5,10 +5,11 @@ import 'package:http/http.dart' as http;
 class ApiService {
   // For Android emulator to access local Node server, use 10.0.2.2.
   // Change to your laptop's IP if testing on a physical device.
-  static const String baseUrl = 'http://10.167.18.24:3000/api';
+  static const String baseUrl = 'http://10.167.18.24:3000';
+  static const String apiUrl = '$baseUrl/api';
 
-  Future<Map<String, dynamic>> analyzeRoom(File imageFile) async {
-    var uri = Uri.parse('$baseUrl/analyze-room');
+  Future<Map<String, dynamic>> analyzeRoom(File imageFile, String roomType) async {
+    var uri = Uri.parse('$apiUrl/analyze-room');
     var request = http.MultipartRequest('POST', uri);
 
     request.files.add(
@@ -17,6 +18,8 @@ class ApiService {
         imageFile.path,
       ),
     );
+
+    request.fields['room_type'] = roomType;
 
     var streamedResponse = await request.send();
     var response = await http.Response.fromStream(streamedResponse);

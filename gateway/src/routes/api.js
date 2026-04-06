@@ -25,8 +25,9 @@ router.post('/analyze-room', upload.single('image'), async (req, res) => {
 
         // aiResult contains { style, confidence, dominant_colors }
 
-        // 2. Query Recommendations
-        const recommendations = await getRecommendations(aiResult);
+        // 2. Query Recommendations using ai result and the user's room type
+        const roomType = req.body.room_type || 'bedroom';
+        const recommendations = await getRecommendations(aiResult, roomType);
 
         // 3. (Optional) Save to user history using Firebase
         // if (req.body.userId) { ... }

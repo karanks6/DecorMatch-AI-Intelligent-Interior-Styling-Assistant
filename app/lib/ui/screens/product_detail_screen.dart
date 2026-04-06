@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
 import '../../core/constants.dart';
 import 'ar_preview_screen.dart';
 
 class ProductDetailScreen extends StatelessWidget {
-  const ProductDetailScreen({super.key});
+  final Map<String, dynamic> productData;
+
+  const ProductDetailScreen({super.key, required this.productData});
 
   @override
   Widget build(BuildContext context) {
@@ -19,9 +22,12 @@ class ProductDetailScreen extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 color: AppColors.secondary,
-                child: const Center(
-                  child: Icon(Icons.chair,
-                      size: 120, color: AppColors.secondaryText),
+                child: Image.network(
+                  '${ApiService.baseUrl}${productData["image_url"]}',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Icon(Icons.image_not_supported, size: 80, color: AppColors.secondaryText),
+                  ),
                 ),
               ),
             ),
@@ -37,8 +43,8 @@ class ProductDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Bohemian',
-                    style: TextStyle(
+                    productData['style_category'] ?? 'Style',
+                    style: const TextStyle(
                       color: AppColors.accent,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.2,
@@ -50,12 +56,12 @@ class ProductDetailScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'Woven Wall Hanging',
+                          productData['name'] ?? 'Decor Item',
                           style: Theme.of(context).textTheme.displayMedium,
                         ),
                       ),
                       Text(
-                        '\$45',
+                        '\$${productData['price'] ?? '0.0'}',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               color: AppColors.primary,
                             ),
@@ -83,8 +89,8 @@ class ProductDetailScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const ArPreviewScreen(
-                                modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb",
+                              builder: (context) => ArPreviewScreen(
+                                modelUrl: '${ApiService.baseUrl}${productData["ar_model_url"]}',
                               )),
                         );
                       },

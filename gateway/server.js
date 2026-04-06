@@ -14,6 +14,10 @@ app.use(express.json());
 const apiRoutes = require('./src/routes/api');
 app.use('/api', apiRoutes);
 
+// Serve local 3D Models Directory statically
+const path = require('path');
+app.use('/models/v2', express.static(path.join(__dirname, '../3D models')));
+
 // General/Health Route
 app.get('/health', (req, res) => {
     res.json({ status: 'Gateway is healthy', ts: new Date() });

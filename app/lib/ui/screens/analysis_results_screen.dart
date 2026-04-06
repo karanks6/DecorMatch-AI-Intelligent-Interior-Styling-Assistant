@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants.dart';
+import '../../services/api_service.dart';
 import '../widgets/product_card.dart';
 import 'product_detail_screen.dart';
 
@@ -128,15 +129,16 @@ class AnalysisResultsScreen extends StatelessWidget {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) =>
-                                              const ProductDetailScreen()),
+                                          builder: (context) => 
+                                              ProductDetailScreen(productData: p)),
                                     );
                                   },
                                   child: ProductCard(
                                     name: p['name'] ?? 'Style Item',
                                     styleCategory: p['style_category'] ?? style,
-                                    imageUrl: p['image_url'] ??
-                                        "https://via.placeholder.com/200",
+                                    imageUrl: p['image_url'] != null
+                                        ? '${ApiService.baseUrl}${p["image_url"]}'
+                                        : "https://via.placeholder.com/200",
                                     price: "\$${p['price'] ?? 0.0}",
                                   ),
                                 ),

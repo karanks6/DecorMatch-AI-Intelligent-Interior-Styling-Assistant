@@ -15,6 +15,15 @@ class RoomUploadScreen extends StatefulWidget {
 class _RoomUploadScreenState extends State<RoomUploadScreen> {
   bool _isAnalyzing = false;
   File? _imageFile;
+  String _selectedRoomType = 'bedroom';
+  
+  final List<String> _roomTypes = [
+    'bedroom',
+    'living_room',
+    'drawing room',
+    'kitchen'
+  ];
+
   final ImagePicker _picker = ImagePicker();
   final ApiService _apiService = ApiService();
 
@@ -78,7 +87,7 @@ class _RoomUploadScreenState extends State<RoomUploadScreen> {
     });
 
     try {
-      final resultData = await _apiService.analyzeRoom(_imageFile!);
+      final resultData = await _apiService.analyzeRoom(_imageFile!, _selectedRoomType);
       if (!mounted) return;
 
       Navigator.push(
@@ -151,6 +160,37 @@ class _RoomUploadScreenState extends State<RoomUploadScreen> {
                           ),
                   ),
                 ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Select Room Type',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8.0,
+                children: _roomTypes.map((type) {
+                  final isSelected = _selectedRoomType == type;
+                  return ChoiceChip(
+                    label: Text(
+                      type.replaceAll('_', ' ').toUpperCase(),
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : AppColors.primaryText,
+                        fontSize: 12,
+                      ),
+                    ),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedRoomType = type;
+                        });
+                      }
+                    },
+                    selectedColor: AppColors.primary,
+                    backgroundColor: AppColors.secondary,
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 32),
               _isAnalyzing
