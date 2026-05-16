@@ -51,7 +51,7 @@ This generates `lib/firebase_options.dart` automatically.
 2. Create virtual environment: `python -m venv venv`
 3. Activate environment:
    - Mac/Linux: `source venv/bin/activate`
-   - Windows: `venv\Scripts\activate`
+   - Windows: `myenv\Scripts\activate`
 4. Install dependencies: `pip install -r requirements.txt`
 
 ### Running Locally

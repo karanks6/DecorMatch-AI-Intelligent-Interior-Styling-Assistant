@@ -34,7 +34,8 @@ try {
                                 dominant_color: "#ffffff", // Default mock
                                 image_url: `/models/v2/${encodeURIComponent(style)}/${encodeURIComponent(roomType)}/${encodeURIComponent(pngFile)}`,
                                 ar_model_url: `/models/v2/${encodeURIComponent(style)}/${encodeURIComponent(roomType)}/${encodeURIComponent(glbFile)}`,
-                                price: Math.floor(Math.random() * 200) + 20,
+                                // Indian pricing: ₹599 to ₹9999
+                                price: Math.floor(Math.random() * 9401) + 599,
                                 popularity_score: Math.floor(Math.random() * 40) + 60
                             });
                         });
@@ -61,7 +62,7 @@ if (productDatabase.length === 0) {
             dominant_color: "#1F2933",
             image_url: "https://via.placeholder.com/200",
             ar_model_url: "",
-            price: 59.99,
+            price: 1299,
             popularity_score: 95
         }
     ];

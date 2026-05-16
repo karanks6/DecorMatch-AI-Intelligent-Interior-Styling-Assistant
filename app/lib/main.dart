@@ -1,19 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:workmanager/workmanager.dart';
 import 'firebase_options.dart';
 
 import 'core/theme.dart';
 import 'ui/screens/splash_screen.dart';
+import 'services/notification_service.dart';
+import 'notification_scheduler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialise local notifications (creates channels, requests permission)
+  await NotificationService.init();
+
+  // Initialise WorkManager for background periodic notifications
+  await Workmanager().initialize(
+    callbackDispatcher,
+    isInDebugMode: false, // set true to log WorkManager events
+  );
+
+  // Schedule reminder + recommendation tasks across the day
+  await schedulePeriodicNotifications();
+
   runApp(const ProviderScope(child: DecorMatchApp()));
 }
+
 
 class DecorMatchApp extends StatelessWidget {
   const DecorMatchApp({super.key});
