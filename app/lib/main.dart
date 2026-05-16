@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:workmanager/workmanager.dart';
 import 'firebase_options.dart';
 
 import 'core/theme.dart';
@@ -19,18 +18,12 @@ void main() async {
   // Initialise local notifications (creates channels, requests permission)
   await NotificationService.init();
 
-  // Initialise WorkManager for background periodic notifications
-  await Workmanager().initialize(
-    callbackDispatcher,
-    isInDebugMode: false, // set true to log WorkManager events
-  );
-
-  // Schedule reminder + recommendation tasks across the day
-  await schedulePeriodicNotifications();
+  // Schedule daily OS-level alarms for reminders & recommendations.
+  // Uses flutter_local_notifications zonedSchedule → fires even when app is killed.
+  await initAndSchedule();
 
   runApp(const ProviderScope(child: DecorMatchApp()));
 }
-
 
 class DecorMatchApp extends StatelessWidget {
   const DecorMatchApp({super.key});

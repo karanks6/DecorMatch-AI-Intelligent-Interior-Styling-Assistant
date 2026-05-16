@@ -5,8 +5,9 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <!-- Exact alarm permissions — both needed for all Android versions -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
 
     <application
         android:label="DecorMatch AI"
@@ -32,15 +33,10 @@
             </intent-filter>
         </activity>
 
-        <!-- WorkManager: background task service -->
-        <service
-            android:name="androidx.work.impl.foreground.SystemForegroundService"
-            android:foregroundServiceType="dataSync"
-            android:exported="false" />
-
-        <!-- flutter_local_notifications: needed for scheduled notifications -->
+        <!-- flutter_local_notifications receivers — alarm-based, no background Dart isolate needed -->
         <receiver android:exported="false"
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
+        <!-- This boot receiver reschedules alarms after device restart automatically -->
         <receiver android:exported="false"
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
             <intent-filter>
@@ -63,3 +59,4 @@
         </intent>
     </queries>
 </manifest>
+

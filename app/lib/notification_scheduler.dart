@@ -1,90 +1,217 @@
-import 'dart:ui';
-import 'package:flutter/widgets.dart';
-import 'package:workmanager/workmanager.dart';
+import 'package:flutter/material.dart' show TimeOfDay, Color;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tzData;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'services/notification_service.dart';
 
-// ─── Task name constants ─────────────────────────────────────────────────────
-const kTaskReminder = 'decormatch_saved_reminder';
-const kTaskReco = 'decormatch_recommendation';
+// ─── Notification ID ranges ──────────────────────────────────────────────────
+// 100–104 → reminders   (5 daily slots)
+// 200–204 → recommendations (5 daily slots)
 
-/// Top-level callback — required by WorkManager 0.9.x.
-/// Must be a top-level function (NOT inside a class).
-///
-/// IMPORTANT: The two ensureInitialized calls below are NOT optional.
-/// Without them, Flutter plugins are not registered in the background
-/// isolate and all notification show() calls silently do nothing.
-@pragma('vm:entry-point')
-void callbackDispatcher() {
-  Workmanager().executeTask((taskName, inputData) async {
-    // Step 1 — bootstrap the Flutter engine binding in this isolate
-    WidgetsFlutterBinding.ensureInitialized();
-    // Step 2 — register all Flutter plugins (flutter_local_notifications etc.)
-    DartPluginRegistrant.ensureInitialized();
+const _kScheduledKey = 'alarm_scheduled_v2';
 
-    // Now it is safe to call plugin code
-    await NotificationService.init();
+/// Initialises the timezone database and schedules all daily alarm-based
+/// notifications. Safe to call every app launch — it checks a flag and only
+/// re-schedules if needed (or if preferences changed).
+Future<void> initAndSchedule() async {
+  tzData.initializeTimeZones();
 
-    final slot = inputData?['slot'] as int? ?? 0;
+  // Attempt to use the device local timezone; fall back to UTC
+  try {
+    final String localName = tz.local.name;
+    if (localName.isEmpty) tz.setLocalLocation(tz.UTC);
+  } catch (_) {
+    tz.setLocalLocation(tz.UTC);
+  }
 
-    switch (taskName) {
-      case kTaskReminder:
-        await NotificationService.showSavedItemsReminder(slot);
-        break;
-      case kTaskReco:
-        await NotificationService.showRecommendation(slot);
-        break;
-    }
-    return true;
-  });
+  await schedulePeriodicNotifications();
 }
 
-/// Registers 5 staggered reminder + 5 staggered recommendation periodic tasks.
+/// Schedules 5 daily reminders and 5 daily recommendations using
+/// flutter_local_notifications zonedSchedule with DateTimeComponents.time.
 ///
-/// WorkManager 0.9.x changed the API: `uniqueName` is now the first positional
-/// arg and `taskName` is the second. The minimum frequency is 15 minutes on
-/// Android but we use 4 hours so OS batching is not an issue.
+/// WHY NOT WorkManager?
+/// WorkManager needs to spin up a Dart isolate every time a task fires, and
+/// OEM battery managers (MIUI, OneUI, ColorOS etc.) aggressively kill those
+/// background isolates. zonedSchedule() registers the alarm directly with
+/// Android AlarmManager — the notification fires even when the app is fully
+/// closed, with NO background Dart code required at fire-time.
 Future<void> schedulePeriodicNotifications() async {
-  final wm = Workmanager();
+  final plugin = FlutterLocalNotificationsPlugin();
 
-  // Cancel existing before re-registering to avoid duplicates
-  await wm.cancelAll();
+  // Check user preferences before scheduling
+  final remindersOn = await NotificationService.remindersEnabled;
+  final recoOn = await NotificationService.recoEnabled;
+
+  // Cancel all existing scheduled alarms first
+  await plugin.cancelAll();
+
+  if (!remindersOn && !recoOn) return;
+
+  // ── Reminder time slots (spread across the day) ───────────────────────────
+  // 9:00  12:00  15:00  18:00  21:00
+  final reminderTimes = [
+    const TimeOfDay(hour: 9, minute: 0),
+    const TimeOfDay(hour: 12, minute: 0),
+    const TimeOfDay(hour: 15, minute: 0),
+    const TimeOfDay(hour: 18, minute: 0),
+    const TimeOfDay(hour: 21, minute: 0),
+  ];
+
+  // ── Recommendation time slots (offset 30 min from reminders) ─────────────
+  // 9:30  12:30  15:30  18:30  21:30
+  final recoTimes = [
+    const TimeOfDay(hour: 9, minute: 30),
+    const TimeOfDay(hour: 12, minute: 30),
+    const TimeOfDay(hour: 15, minute: 30),
+    const TimeOfDay(hour: 18, minute: 30),
+    const TimeOfDay(hour: 21, minute: 30),
+  ];
 
   for (int i = 0; i < 5; i++) {
-    // Reminders: 1h, 4h, 7h, 10h, 13h initial delay, repeat every 4h
-    await wm.registerPeriodicTask(
-      '${kTaskReminder}_$i',     // unique name (used to identify/replace)
-      kTaskReminder,              // task name passed to callbackDispatcher
-      frequency: const Duration(hours: 4),
-      initialDelay: Duration(hours: 1 + i * 3),
-      inputData: {'slot': i},
-      existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
-      constraints: Constraints(
-        networkType: NetworkType.notRequired,
-        requiresBatteryNotLow: false,
-        requiresCharging: false,
-        requiresDeviceIdle: false,
-      ),
-    );
+    if (remindersOn) {
+      await _scheduleDailyAlarm(
+        plugin: plugin,
+        id: 100 + i,
+        time: reminderTimes[i],
+        channelId: 'decormatch_reminders',
+        channelName: 'Saved Items Reminders',
+        content: _reminderContent(i),
+      );
+    }
 
-    // Recommendations: offset 1h from reminders
-    await wm.registerPeriodicTask(
-      '${kTaskReco}_$i',
-      kTaskReco,
-      frequency: const Duration(hours: 4),
-      initialDelay: Duration(hours: 2 + i * 3),
-      inputData: {'slot': i},
-      existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
-      constraints: Constraints(
-        networkType: NetworkType.notRequired,
-        requiresBatteryNotLow: false,
-        requiresCharging: false,
-        requiresDeviceIdle: false,
-      ),
-    );
+    if (recoOn) {
+      await _scheduleDailyAlarm(
+        plugin: plugin,
+        id: 200 + i,
+        time: recoTimes[i],
+        channelId: 'decormatch_reco',
+        channelName: 'Recommendations',
+        content: _recoContent(i),
+      );
+    }
   }
+
+  // Persist flag so we know alarms are set
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(_kScheduledKey, true);
 }
 
-/// Cancels all background notification tasks.
+/// Cancels all OS-level scheduled notification alarms.
 Future<void> cancelAllScheduledNotifications() async {
-  await Workmanager().cancelAll();
+  final plugin = FlutterLocalNotificationsPlugin();
+  await plugin.cancelAll();
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove(_kScheduledKey);
 }
+
+// ─── Internal helpers ─────────────────────────────────────────────────────────
+
+Future<void> _scheduleDailyAlarm({
+  required FlutterLocalNotificationsPlugin plugin,
+  required int id,
+  required TimeOfDay time,
+  required String channelId,
+  required String channelName,
+  required ({String title, String body}) content,
+}) async {
+  final now = tz.TZDateTime.now(tz.local);
+
+  // Build a TZDateTime for today at the target time
+  var scheduledDate = tz.TZDateTime(
+    tz.local,
+    now.year,
+    now.month,
+    now.day,
+    time.hour,
+    time.minute,
+  );
+
+  // If the time has already passed today, push to tomorrow
+  if (scheduledDate.isBefore(now)) {
+    scheduledDate = scheduledDate.add(const Duration(days: 1));
+  }
+
+  await plugin.zonedSchedule(
+    id,
+    content.title,
+    content.body,
+    scheduledDate,
+    NotificationDetails(
+      android: AndroidNotificationDetails(
+        channelId,
+        channelName,
+        importance: Importance.high,
+        priority: Priority.high,
+        color: const Color(0xFF0D5C4A),
+        styleInformation: BigTextStyleInformation(
+          content.body,
+          contentTitle: content.title,
+          summaryText: 'DecorMatch AI',
+        ),
+        largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      ),
+    ),
+    androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    uiLocalNotificationDateInterpretation:
+        UILocalNotificationDateInterpretation.absoluteTime,
+    matchDateTimeComponents: DateTimeComponents.time,
+  );
+}
+
+// ─── Notification content banks ───────────────────────────────────────────────
+
+({String title, String body}) _reminderContent(int slot) {
+  const messages = [
+    (
+      title: '🛋️ Your Saved Items Are Waiting',
+      body: 'You have curated pieces saved — explore and transform your space today!',
+    ),
+    (
+      title: '🏡 Style Your Dream Room',
+      body: 'Check out the items you loved. Your perfect interior is just a click away.',
+    ),
+    (
+      title: '💡 Redecorate with Confidence',
+      body: 'Your saved decor collection is ready to preview in AR. Give it a try!',
+    ),
+    (
+      title: '🌿 Refresh Your Space',
+      body: 'Revisit your saved picks and find the perfect finishing touch for your room.',
+    ),
+    (
+      title: '✨ Your Wishlist is Calling',
+      body: 'Browse your saved items and preview them in Augmented Reality — for free!',
+    ),
+  ];
+  return messages[slot % messages.length];
+}
+
+({String title, String body}) _recoContent(int slot) {
+  const messages = [
+    (
+      title: '🪴 New Arrivals for Your Style',
+      body: 'Fresh decor pieces curated for your aesthetic just landed. Tap to discover!',
+    ),
+    (
+      title: '🛒 Trending in Your Style',
+      body: 'These handpicked items are trending among homeowners with your taste.',
+    ),
+    (
+      title: '🎨 Curated Just for You',
+      body: 'New products matching your style preferences are ready to view in 3D & AR.',
+    ),
+    (
+      title: '🏠 Elevate Your Interior Today',
+      body: 'Browse new recommendations tailored to your room\'s aesthetic profile.',
+    ),
+    (
+      title: '✨ Your Style, Perfectly Matched',
+      body: 'DecorMatch AI found new products that align with your saved preferences!',
+    ),
+  ];
+  return messages[slot % messages.length];
+}
+
+
