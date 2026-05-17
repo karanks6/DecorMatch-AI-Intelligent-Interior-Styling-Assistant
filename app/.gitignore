@@ -24,6 +24,7 @@ gateway/*.json
 *.pt
 __pycache__/
 *.pyc
+.json
 
 # IntelliJ related
 *.iml
