@@ -71,3 +71,4 @@ DecorMatch AI employs a modern, decoupled microservices architecture to ensure h
 
 ### 3. Gateway / API Service (Backend Business Logic)
 - **Node.js & Express.js:** Acts as the central nervous system of the backend architecture. It serves product data, routes requests between the mobile app and the Python AI service, and statically serves the 3D `.glb` assets to the frontend.
+
