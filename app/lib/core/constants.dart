@@ -41,3 +41,4 @@ class AppColors {
     end: Alignment.bottomCenter,
   );
 }
+

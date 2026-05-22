@@ -37,6 +37,7 @@ class AppTheme {
         iconTheme: const IconThemeData(color: AppColors.primaryText, size: 22),
       ),
 
+
       // Typography
       textTheme: TextTheme(
         displayLarge: GoogleFonts.playfairDisplay(
@@ -85,6 +86,7 @@ class AppTheme {
           letterSpacing: 0.3,
         ),
       ),
+
 
       // Buttons
       elevatedButtonTheme: ElevatedButtonThemeData(
