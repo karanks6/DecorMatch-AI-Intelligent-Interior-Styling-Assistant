@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/app_logo.png" alt="DecorMatch AI Logo" width="140" />
+</p>
+
 # DecorMatch AI
 
 **DecorMatch AI** is a premium, highly intelligent interior styling assistant that empowers users to effortlessly design and furnish their homes. By combining deep learning, computer vision, and augmented reality (AR), the platform acts as a personal digital interior designer.
