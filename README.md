@@ -6,14 +6,10 @@
 
 ## 🎬 Project Demo
 
-<p align="center">
-  <video src="https://github.com/user-attachments/assets/2eebe27d-e41c-436e-9e44-229fe3fac5e1" controls="controls" width="100%" style="max-width: 720px; border-radius: 12px;">
-  </video>
-</p>
-
-<p align="center">
-  <em>DecorMatch AI — Mobile app walkthrough & real-time AR furniture placement demo (2m 23s)</em>
-</p>
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/2eebe27d-e41c-436e-9e44-229fe3fac5e1" width="340" controls></video>
+  <p><em>DecorMatch AI — Mobile app walkthrough & real-time AR furniture placement demo (2m 23s)</em></p>
+</div>
 
 ---
 
