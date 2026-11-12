@@ -4,6 +4,27 @@
 
 ---
 
+## 🎬 Project Demo
+
+<p align="center">
+  <a href="assets/Project%20Demo.mp4" title="Click to Watch DecorMatch AI Demo Video">
+    <img src="assets/demo_thumbnail.png" alt="DecorMatch AI Demo Walkthrough" width="100%" style="max-width: 820px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);" />
+  </a>
+</p>
+
+<p align="center">
+  ▶️ <b><a href="assets/Project%20Demo.mp4">Click Here to Watch the Full App Walkthrough & AR Demo Video (2m 23s)</a></b>
+</p>
+
+<p align="center">
+  <video src="assets/Project%20Demo.mp4" controls width="100%" style="max-width: 820px; border-radius: 12px;">
+    <source src="assets/Project%20Demo.mp4" type="video/mp4">
+    Your browser does not support the video tag. <a href="assets/Project%20Demo.mp4">Click here to view or download the demo video.</a>
+  </video>
+</p>
+
+---
+
 ## 📖 Description
 
 DecorMatch AI bridges the gap between imagination and reality in interior design. Users simply snap a photo of their room, and the app instantly performs a comprehensive aesthetic analysis. It detects the current interior style, maps out the dominant color palette, and identifies existing furniture. Based on this contextual understanding, DecorMatch AI curates and recommends decor items that harmonize perfectly with the user's space. To complete the experience, users can seamlessly preview these recommended items directly in their physical room using high-fidelity 3D Augmented Reality (AR) before making a purchase.
